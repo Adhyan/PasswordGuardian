@@ -1,0 +1,111 @@
+# =============================================================================
+# Password Guardian Pro — .gitignore
+# =============================================================================
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+
+# --- Virtual Environments ---
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.virtualenv/
+
+# --- Flask / App Specific ---
+instance/
+.webassets-cache
+flask_session/
+
+# --- Database ---
+database/*.db
+database/*.sqlite
+database/*.sqlite3
+*.db
+*.sqlite
+*.sqlite3
+
+# --- Environment Variables & Secrets ---
+.env
+.env.*
+!.env.example
+*.secret
+config/local.py
+secrets.json
+
+# --- Logs ---
+logs/
+*.log
+*.log.*
+log/
+
+# --- OS Generated ---
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# --- IDE / Editor ---
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+
+# --- Testing & Coverage ---
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+
+# --- Distribution / Build ---
+dist/
+build/
+*.egg-info/
+*.egg
+MANIFEST
+.eggs/
+
+# --- Jupyter Notebooks ---
+.ipynb_checkpoints/
+*.ipynb
+
+# --- Node (if ever adding frontend tooling) ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --- Temporary Files ---
+*.tmp
+*.temp
+*.bak
+*.orig
+*.pid
+
+# --- Static Uploads (user-generated content) ---
+static/uploads/
+
+# --- Dataset — keep the file but ignore any personal additions ---
+# datasets/common_passwords.txt is intentionally tracked
