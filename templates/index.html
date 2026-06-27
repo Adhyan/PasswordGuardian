@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Password Guardian Pro — Professional password strength analyser and secure generator." />
+  <title>Password Guardian Pro</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <!-- Chart.js for dashboard visualisations -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
+  <!-- Main application JS -->
+  <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+</head>
+<body data-theme="dark">
+
+  <!-- =====================================================================
+       NAVBAR
+  ====================================================================== -->
+  <nav class="navbar">
+    <div class="nav-brand">
+      <span class="nav-icon">🛡️</span>
+      <span class="nav-title">Password <strong>Guardian</strong> Pro</span>
+    </div>
+    <div class="nav-links">
+      <button class="nav-btn active" data-tab="analyzer">Analyser</button>
+      <button class="nav-btn"        data-tab="generator">Generator</button>
+      <button class="nav-btn"        data-tab="dashboard">Dashboard</button>
+      <button class="nav-btn"        data-tab="education">Learn</button>
+    </div>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+      <span class="theme-icon">🌙</span>
+    </button>
+  </nav>
+
+  <!-- =====================================================================
+       MAIN
+  ====================================================================== -->
+  <main class="main-container">
+
+    <!-- =================================================================
+         TAB: ANALYSER
+    ================================================================== -->
+    <section class="tab-panel active" id="tab-analyzer">
+
+      <div class="hero-section">
+        <h1 class="hero-title">How strong is your password?</h1>
+        <p class="hero-sub">Entropy analysis · Breach detection · Crack-time estimation</p>
+      </div>
+
+      <!-- Password input card -->
+      <div class="card input-card">
+        <div class="input-wrapper">
+          <input
+            type="password"
+            id="passwordInput"
+            class="password-input"
+            placeholder="Enter a password to analyse…"
+            maxlength="512"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button class="toggle-visibility" id="toggleVisibility" aria-label="Show password">
+            <span>👁</span>
+          </button>
+        </div>
+
+        <!-- Strength meter -->
+        <div class="meter-container">
+          <div class="meter-track">
+            <div class="meter-fill" id="meterFill"></div>
+          </div>
+          <div class="meter-labels">
+            <span class="meter-label" id="strengthLabel">—</span>
+            <span class="meter-score" id="strengthScore"></span>
+          </div>
+        </div>
+
+        <div class="input-actions">
+          <button class="btn btn-primary" id="analyzeBtn">Analyse Password</button>
+          <button class="btn btn-ghost"   id="clearBtn">Clear</button>
+        </div>
+      </div>
+
+      <!-- Results grid (hidden until analysis) -->
+      <div class="results-grid hidden" id="resultsGrid">
+
+        <!-- Security score card -->
+        <div class="card score-card">
+          <div class="score-ring-wrapper">
+            <svg class="score-ring" viewBox="0 0 120 120">
+              <circle class="ring-track" cx="60" cy="60" r="50"/>
+              <circle class="ring-fill"  cx="60" cy="60" r="50" id="scoreRingFill"/>
+            </svg>
+            <div class="score-center">
+              <span class="score-number" id="scoreNumber">0</span>
+              <span class="score-max">/100</span>
+            </div>
+          </div>
+          <div class="score-meta">
+            <div class="score-grade"    id="scoreGrade">—</div>
+            <div class="score-strength" id="scoreStrength">—</div>
+          </div>
+        </div>
+
+        <!-- Crack time card -->
+        <div class="card crack-card">
+          <h3 class="card-title">⏱ Crack Time</h3>
+          <div class="crack-summary" id="crackSummary">—</div>
+          <div class="crack-scenarios">
+            <div class="scenario">
+              <span class="scenario-label">Online (throttled)</span>
+              <span class="scenario-value" id="ct-online-throttled">—</span>
+            </div>
+            <div class="scenario">
+              <span class="scenario-label">Online (unthrottled)</span>
+              <span class="scenario-value" id="ct-online-unthrottled">—</span>
+            </div>
+            <div class="scenario">
+              <span class="scenario-label">Offline (bcrypt)</span>
+              <span class="scenario-value" id="ct-offline-slow">—</span>
+            </div>
+            <div class="scenario">
+              <span class="scenario-label">Offline (MD5/GPU)</span>
+              <span class="scenario-value" id="ct-offline-fast">—</span>
+            </div>
+            <div class="scenario">
+              <span class="scenario-label">GPU cluster</span>
+              <span class="scenario-value" id="ct-offline-gpu">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Checks card -->
+        <div class="card checks-card">
+          <h3 class="card-title">🔍 Security Checks</h3>
+          <div class="checks-grid">
+            <div class="check-item" id="chk-length">
+              <span class="check-icon">○</span>
+              <span class="check-label">Length</span>
+              <span class="check-value" id="chk-length-val">—</span>
+            </div>
+            <div class="check-item" id="chk-uppercase">
+              <span class="check-icon">○</span>
+              <span class="check-label">Uppercase</span>
+            </div>
+            <div class="check-item" id="chk-lowercase">
+              <span class="check-icon">○</span>
+              <span class="check-label">Lowercase</span>
+            </div>
+            <div class="check-item" id="chk-digits">
+              <span class="check-icon">○</span>
+              <span class="check-label">Numbers</span>
+            </div>
+            <div class="check-item" id="chk-symbols">
+              <span class="check-icon">○</span>
+              <span class="check-label">Symbols</span>
+            </div>
+            <div class="check-item" id="chk-entropy">
+              <span class="check-icon">○</span>
+              <span class="check-label">Entropy</span>
+              <span class="check-value" id="chk-entropy-val">—</span>
+            </div>
+            <div class="check-item" id="chk-repeats">
+              <span class="check-icon">○</span>
+              <span class="check-label">No Repeats</span>
+            </div>
+            <div class="check-item" id="chk-sequences">
+              <span class="check-icon">○</span>
+              <span class="check-label">No Sequences</span>
+            </div>
+            <div class="check-item" id="chk-keyboard">
+              <span class="check-icon">○</span>
+              <span class="check-label">No Keyboard Walk</span>
+            </div>
+            <div class="check-item" id="chk-breached">
+              <span class="check-icon">○</span>
+              <span class="check-label">Not Breached</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Suggestions card -->
+        <div class="card suggestions-card">
+          <h3 class="card-title">💡 Recommendations</h3>
+          <ul class="suggestions-list" id="suggestionsList"></ul>
+        </div>
+
+        <!-- Entropy card -->
+        <div class="card entropy-card">
+          <h3 class="card-title">📊 Entropy Analysis</h3>
+          <div class="entropy-row">
+            <span class="entropy-label">Raw Entropy</span>
+            <span class="entropy-value" id="rawEntropy">—</span>
+          </div>
+          <div class="entropy-row">
+            <span class="entropy-label">True Entropy (penalised)</span>
+            <span class="entropy-value" id="trueEntropy">—</span>
+          </div>
+          <div class="entropy-row">
+            <span class="entropy-label">zxcvbn Score</span>
+            <span class="entropy-value" id="zxcvbnScore">—</span>
+          </div>
+          <div class="entropy-row">
+            <span class="entropy-label">Character Pool</span>
+            <span class="entropy-value" id="charPool">—</span>
+          </div>
+          <div class="entropy-bar-container">
+            <div class="entropy-bar" id="entropyBar"></div>
+          </div>
+        </div>
+
+        <!-- Hash card -->
+        <div class="card hash-card">
+          <h3 class="card-title">🔒 SHA-256 Hash</h3>
+          <p class="hash-note">Raw passwords are never stored — only this hash.</p>
+          <div class="hash-display" id="hashDisplay">—</div>
+        </div>
+
+      </div><!-- /results-grid -->
+
+    </section>
+
+    <!-- =================================================================
+         TAB: GENERATOR
+    ================================================================== -->
+    <section class="tab-panel" id="tab-generator">
+
+      <div class="hero-section">
+        <h1 class="hero-title">Generate a secure password</h1>
+        <p class="hero-sub">Cryptographically secure · CSPRNG · Customisable</p>
+      </div>
+
+      <div class="generator-layout">
+
+        <!-- Options panel -->
+        <div class="card gen-options-card">
+          <h3 class="card-title">⚙️ Options</h3>
+
+          <!-- Mode selector -->
+          <div class="option-group">
+            <label class="option-label">Mode</label>
+            <div class="mode-selector">
+              <button class="mode-btn active" data-mode="random">Random</button>
+              <button class="mode-btn"        data-mode="pronounceable">Pronounceable</button>
+              <button class="mode-btn"        data-mode="passphrase">Passphrase</button>
+              <button class="mode-btn"        data-mode="pin">PIN</button>
+            </div>
+          </div>
+
+          <!-- Length slider -->
+          <div class="option-group" id="lengthGroup">
+            <label class="option-label">Length: <strong id="lengthDisplay">16</strong></label>
+            <input type="range" id="lengthSlider" min="8" max="64" value="16" class="slider" />
+            <div class="slider-marks">
+              <span>8</span><span>16</span><span>32</span><span>64</span>
+            </div>
+          </div>
+
+          <!-- Word count (passphrase only) -->
+          <div class="option-group hidden" id="wordCountGroup">
+            <label class="option-label">Word count: <strong id="wordCountDisplay">4</strong></label>
+            <input type="range" id="wordCountSlider" min="3" max="8" value="4" class="slider" />
+          </div>
+
+          <!-- Toggles -->
+          <div class="option-group" id="charClassGroup">
+            <label class="option-label">Character Classes</label>
+            <div class="toggles-grid">
+              <label class="toggle-row">
+                <span class="toggle-text">Uppercase A–Z</span>
+                <input type="checkbox" id="genUppercase" checked />
+                <span class="toggle-switch"></span>
+              </label>
+              <label class="toggle-row">
+                <span class="toggle-text">Lowercase a–z</span>
+                <input type="checkbox" id="genLowercase" checked />
+                <span class="toggle-switch"></span>
+              </label>
+              <label class="toggle-row">
+                <span class="toggle-text">Numbers 0–9</span>
+                <input type="checkbox" id="genDigits" checked />
+                <span class="toggle-switch"></span>
+              </label>
+              <label class="toggle-row">
+                <span class="toggle-text">Symbols !@#$…</span>
+                <input type="checkbox" id="genSymbols" checked />
+                <span class="toggle-switch"></span>
+              </label>
+              <label class="toggle-row">
+                <span class="toggle-text">Avoid ambiguous (0, O, l, 1…)</span>
+                <input type="checkbox" id="genAvoidAmbiguous" />
+                <span class="toggle-switch"></span>
+              </label>
+            </div>
+          </div>
+
+          <button class="btn btn-primary full-width" id="generateBtn">Generate Password</button>
+        </div>
+
+        <!-- Output panel -->
+        <div class="card gen-output-card">
+          <h3 class="card-title">🔑 Generated Password</h3>
+
+          <div class="gen-result-box" id="genResultBox">
+            <span class="gen-placeholder">Click Generate to create a password</span>
+          </div>
+
+          <div class="gen-actions hidden" id="genActions">
+            <button class="btn btn-secondary" id="copyBtn">📋 Copy</button>
+            <button class="btn btn-ghost"     id="analyzeGenBtn">🔍 Analyse This</button>
+            <button class="btn btn-ghost"     id="regenBtn">🔄 Regenerate</button>
+          </div>
+
+          <div class="gen-meta hidden" id="genMeta">
+            <div class="meta-row">
+              <span>Entropy</span>
+              <strong id="genEntropy">—</strong>
+            </div>
+            <div class="meta-row">
+              <span>Pool size</span>
+              <strong id="genPoolSize">—</strong>
+            </div>
+            <div class="meta-row">
+              <span>Length</span>
+              <strong id="genLength">—</strong>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =================================================================
+         TAB: DASHBOARD
+    ================================================================== -->
+    <section class="tab-panel" id="tab-dashboard">
+
+      <div class="hero-section">
+        <h1 class="hero-title">Analysis Dashboard</h1>
+        <p class="hero-sub">Aggregated statistics from all password checks this session</p>
+      </div>
+
+      <!-- Stat tiles -->
+      <div class="stats-tiles" id="statsTiles">
+        <div class="stat-tile">
+          <div class="stat-value" id="stat-total">—</div>
+          <div class="stat-label">Passwords Tested</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-value" id="stat-avg">—</div>
+          <div class="stat-label">Average Score</div>
+        </div>
+        <div class="stat-tile tile-good">
+          <div class="stat-value" id="stat-strong-pct">—</div>
+          <div class="stat-label">Strong Password %</div>
+        </div>
+        <div class="stat-tile tile-bad">
+          <div class="stat-value" id="stat-weak-pct">—</div>
+          <div class="stat-label">Weak Password %</div>
+        </div>
+      </div>
+
+      <!-- Charts row -->
+      <div class="charts-row">
+        <div class="card chart-card">
+          <h3 class="card-title">Strength Breakdown</h3>
+          <div class="chart-wrapper">
+            <canvas id="strengthPieChart"></canvas>
+          </div>
+        </div>
+        <div class="card chart-card">
+          <h3 class="card-title">Score Distribution</h3>
+          <div class="chart-wrapper">
+            <canvas id="scoreBarChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- History table -->
+      <div class="card history-card">
+        <div class="history-header">
+          <h3 class="card-title">📋 Recent Analyses</h3>
+          <div class="history-actions">
+            <button class="btn btn-ghost btn-sm" id="refreshHistory">↻ Refresh</button>
+            <button class="btn btn-danger btn-sm" id="clearHistoryBtn">🗑 Clear</button>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Date</th>
+                <th>Hash (truncated)</th>
+                <th>Score</th>
+                <th>Strength</th>
+                <th>Entropy</th>
+                <th>Grade</th>
+                <th>Breached</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody">
+              <tr><td colspan="8" class="table-empty">No analyses yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- =================================================================
+         TAB: EDUCATION
+    ================================================================== -->
+    <section class="tab-panel" id="tab-education">
+
+      <div class="hero-section">
+        <h1 class="hero-title">Password Security 101</h1>
+        <p class="hero-sub">Understand the attacks your password defends against</p>
+      </div>
+
+      <div class="edu-grid">
+
+        <div class="card edu-card">
+          <div class="edu-icon">🎲</div>
+          <h3>What is Entropy?</h3>
+          <p>
+            Entropy measures unpredictability in bits. A password with 60 bits of entropy
+            means an attacker needs to try up to 2<sup>60</sup> ≈ 1 quintillion combinations.
+            Each additional character from a large pool roughly doubles the search space.
+          </p>
+          <div class="edu-formula">H = L × log₂(R)</div>
+          <p class="edu-formula-note">L = length &nbsp;·&nbsp; R = character pool size</p>
+        </div>
+
+        <div class="card edu-card">
+          <div class="edu-icon">💥</div>
+          <h3>Brute Force Attack</h3>
+          <p>
+            An attacker systematically tries every possible combination until the correct
+            password is found. Modern GPUs can attempt <strong>billions of MD5 hashes per second</strong>.
+            A 6-character lowercase password falls in milliseconds. Length is your best defence.
+          </p>
+        </div>
+
+        <div class="card edu-card">
+          <div class="edu-icon">📖</div>
+          <h3>Dictionary Attack</h3>
+          <p>
+            Instead of random guessing, attackers start with known words, names, and phrases,
+            then apply common transformations: <code>password → P@ssw0rd</code>.
+            Any recognisable word in your password is a weakness, regardless of substitutions.
+          </p>
+        </div>
+
+        <div class="card edu-card">
+          <div class="edu-icon">🌈</div>
+          <h3>Rainbow Tables</h3>
+          <p>
+            Pre-computed tables that map hash values back to passwords. An attacker who steals
+            an MD5 hash database can look up most passwords instantly. This is why modern systems
+            use <strong>salted hashing</strong> (bcrypt, Argon2) — unique salts make rainbow
+            tables useless.
+          </p>
+        </div>
+
+        <div class="card edu-card">
+          <div class="edu-icon">🔄</div>
+          <h3>Credential Stuffing</h3>
+          <p>
+            Billions of username/password pairs from past breaches are freely available.
+            Attackers automate login attempts across thousands of sites. If you reuse a
+            password from any breached service, every account sharing that password is at risk.
+          </p>
+        </div>
+
+        <div class="card edu-card">
+          <div class="edu-icon">♻️</div>
+          <h3>Password Reuse</h3>
+          <p>
+            Reusing passwords is the single most dangerous habit. One breach exposes every
+            account. Use a <strong>password manager</strong> to maintain unique, high-entropy
+            passwords for every service — you only need to remember one master password.
+          </p>
+        </div>
+
+        <div class="card edu-card edu-card--wide">
+          <div class="edu-icon">✅</div>
+          <h3>Best Practices</h3>
+          <ul class="best-practices-list">
+            <li>Use a minimum of <strong>16 characters</strong> for important accounts.</li>
+            <li>Combine <strong>uppercase, lowercase, digits, and symbols</strong>.</li>
+            <li>Never use <strong>dictionary words</strong> without heavy obfuscation.</li>
+            <li>Avoid <strong>keyboard walks</strong>: qwerty, asdf, 1234.</li>
+            <li>Use a <strong>passphrase</strong> (four random words) for memorable strong passwords.</li>
+            <li>Enable <strong>multi-factor authentication</strong> wherever available.</li>
+            <li>Use a <strong>password manager</strong>: Bitwarden, 1Password, or KeePass.</li>
+            <li>Check breaches at <a href="https://haveibeenpwned.com" target="_blank" rel="noopener">HaveIBeenPwned</a>.</li>
+          </ul>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- =====================================================================
+       TOAST NOTIFICATION
+  ====================================================================== -->
+  <div class="toast" id="toast" aria-live="polite"></div>
+
+  <!-- =====================================================================
+       LOADING OVERLAY
+  ====================================================================== -->
+  <div class="loading-overlay hidden" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <span class="loading-text">Analysing…</span>
+  </div>
+
+</body>
+</html>
